@@ -1,0 +1,68 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Homepage {
+  id            Int    @id @default(autoincrement())
+  bio           String
+  image_url     String
+  linkedin_url  String
+  github_url    String
+  email_address String
+  contact_no    String
+  resume_url    String?
+}
+
+model Experiance {
+  id                  Int      @id @default(autoincrement())
+  company_name        String
+  job_role            String
+  start_date          DateTime
+  end_date            DateTime?
+  currently_working   Boolean
+  description_job     String
+  technical_stacks    String[]
+  project_description String[]
+}
+
+model Projects {
+  id                  Int      @id @default(autoincrement())
+  project_pic_url     String[]
+  project_title       String
+  project_description String
+  project_tech_stacks String[]
+  project_live_link   String?
+  project_github_link String?
+}
+
+model Skills {
+  id              Int     @id @default(autoincrement())
+  skill_image_url String?
+  skill_name      String?
+}
+
+model Education {
+  id                 Int      @id @default(autoincrement())
+  course_name        String
+  university_name    String
+  uni_state          String
+  uni_country        String
+  start_date         DateTime
+  end_date           DateTime?
+  cgpa               Float?
+  currently_studying Boolean?
+}
+
+model Certificates {
+  id                 Int     @id @default(autoincrement())
+  certificate_name   String?
+  certificate_bodies String?
+  certificate_img_url String?
+  date_received      DateTime
+  credential_id String
+}
