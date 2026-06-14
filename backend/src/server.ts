@@ -21,9 +21,13 @@ app.use('/api/v1', publicRoutes);
 // Notice how we add a distinct "/admin" path namespace prefix
 app.use('/api/v1/admin', adminRoutes);
 
+app.get("/", (req: Request, res: Response) => {
+    res.status(200).json({ status: "OK", service: "portfolio-backend" });
+});
+
 app.get("/health", (req: Request, res: Response) => {
     res.status(200).json({status: "Velai seiyudhu", timestamp: new Date() });
-    });
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
