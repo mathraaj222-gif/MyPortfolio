@@ -27,7 +27,7 @@ const Whatsapp = ({ size = 16, style, ...props }) => (
   </svg>
 );
 
-const API_BASE_URL = 'http://localhost:5000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 export default function AdminHome() {
   const [aboutText, setAboutText] = useState("");

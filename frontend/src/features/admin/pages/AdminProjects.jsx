@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FolderGit2, Plus, Edit2, Trash2, ExternalLink, Save, Upload } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 export default function AdminProjects() {
   const [projects, setProjects] = useState([]);

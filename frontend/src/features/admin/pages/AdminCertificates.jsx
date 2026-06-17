@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Award, Plus, Edit2, Trash2, Save } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 const monthsList = [
   { value: "01", label: "January" },
