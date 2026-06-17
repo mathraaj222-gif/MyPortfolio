@@ -23,7 +23,7 @@ RUN npm install -g serve
 COPY --from=builder /app/dist ./dist
 
 # Cloud Run automatically assigns the PORT environment variable
-ENV PORT=8080
+ENV VITE_API_URL=$VITE_API_URL
 EXPOSE $PORT
 
 # Start serving the static files on the assigned port
