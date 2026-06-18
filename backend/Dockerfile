@@ -27,6 +27,12 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
+# Define required environment variables without hardcoding secrets
+ENV DATABASE_URL=""
+ENV SUPABASE_URL=""
+ENV SUPABASE_ANON_KEY=""
+ENV FRONTEND_URL=""
+
 # Expose port (Cloud Run sets PORT env var automatically)
 ENV PORT=5000
 EXPOSE $PORT

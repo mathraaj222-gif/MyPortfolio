@@ -27,6 +27,9 @@ RUN npm install -g serve
 # Copy compiled assets from builder
 COPY --from=builder /app/dist ./dist
 
+# Define a default PORT in case it's not set by the deployment environment
+ENV PORT=3000
+
 # Cloud Run automatically assigns the PORT environment variable
 EXPOSE $PORT
 
