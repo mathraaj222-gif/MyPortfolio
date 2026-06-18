@@ -8,7 +8,7 @@ RUN npm ci
 
 # Accept the API URL as a build argument
 ARG VITE_API_URL
-# Set it as an environment variable for the build process
+# Set it as an environment variable for the build process hope it works this time
 ENV VITE_API_URL=$VITE_API_URL
 
 # Copy source and build the Vite React app
