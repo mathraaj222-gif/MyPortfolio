@@ -6,9 +6,14 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+# Accept the API URL as a build argument
+ARG VITE_API_URL
+# Set it as an environment variable for the build process
+ENV VITE_API_URL=$VITE_API_URL
+
 # Copy source and build the Vite React app
 COPY . .
-# Note: For Vite, you must inject environment variables like VITE_API_BASE_URL during the build process
+# Note: For Vite, you must inject environment variables like VITE_API_URL during the build process
 RUN npm run build
 
 # Stage 2: Serve the app
@@ -23,7 +28,6 @@ RUN npm install -g serve
 COPY --from=builder /app/dist ./dist
 
 # Cloud Run automatically assigns the PORT environment variable
-ENV VITE_API_URL=$VITE_API_URL
 EXPOSE $PORT
 
 # Start serving the static files on the assigned port
