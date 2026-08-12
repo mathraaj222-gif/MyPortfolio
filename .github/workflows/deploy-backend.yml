@@ -1,0 +1,99 @@
+name: Deploy Backend to Elastic Beanstalk
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'          # Only triggers when backend files change
+
+jobs:
+  deploy:
+    name: Build & Deploy to EB
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      # 4. Generate Prisma client
+      - name: Generate Prisma client
+        working-directory: backend
+        run: npx prisma generate
+
+      # 5. Build TypeScript -> JavaScript
+      - name: Build TypeScript
+        working-directory: backend
+        run: npm run build
+
+      # 6. Create the deployment ZIP
+      #    Elastic Beanstalk expects a ZIP containing:
+      #      - Dockerfile        (EB builds the Docker image from this)
+      #      - dist/             (compiled JS)
+      #      - prisma/           (schema + migrations)
+      #      - package*.json     (needed by Dockerfile RUN npm ci)
+      #      - .ebextensions/    (EB platform config)
+      - name: Create deployment package
+        run: |
+          cd backend
+          zip -r ../deploy-backend.zip \
+            Dockerfile \
+            package.json \
+            package-lock.json \
+            dist/ \
+            prisma/ \
+            .ebextensions/
+
+      # 7. Configure AWS credentials from GitHub Secrets
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 8. Upload ZIP to your S3 bucket
+      - name: Upload deployment package to S3
+        run: |
+          VERSION_LABEL="backend-${{ github.sha }}"
+          aws s3 cp deploy-backend.zip \
+            s3://${{ secrets.EB_S3_BUCKET }}/deployments/${VERSION_LABEL}.zip
+
+      # 9. Create a new EB application version pointing at that S3 object
+      - name: Create Elastic Beanstalk application version
+        run: |
+          VERSION_LABEL="backend-${{ github.sha }}"
+          aws elasticbeanstalk create-application-version \
+            --application-name "${{ secrets.EB_APP_NAME }}" \
+            --version-label "${VERSION_LABEL}" \
+            --source-bundle S3Bucket="${{ secrets.EB_S3_BUCKET }}",S3Key="deployments/${VERSION_LABEL}.zip" \
+            --auto-create-application
+
+      # 10. Deploy the new version to your EB environment
+      - name: Deploy to Elastic Beanstalk environment
+        run: |
+          VERSION_LABEL="backend-${{ github.sha }}"
+          aws elasticbeanstalk update-environment \
+            --environment-name "${{ secrets.EB_ENV_NAME }}" \
+            --version-label "${VERSION_LABEL}"
+
+      # 11. Wait for deployment to finish
+      - name: Wait for environment to be ready
+        run: |
+          aws elasticbeanstalk wait environment-updated \
+            --environment-name "${{ secrets.EB_ENV_NAME }}"
+          echo "Deployment complete!"
