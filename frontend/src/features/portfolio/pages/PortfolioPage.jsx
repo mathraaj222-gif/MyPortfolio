@@ -6,7 +6,7 @@ import PortfolioProjects from '../components/PortfolioProjects';
 import PortfolioSkills from '../components/PortfolioSkills';
 import PortfolioCertificates from '../components/PortfolioCertificates';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1').replace(/\/$/, '');
 
 export default function PortfolioPage() {
   const [activeSection, setActiveSection] = useState('home');

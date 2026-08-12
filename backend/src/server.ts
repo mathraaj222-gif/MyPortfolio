@@ -21,7 +21,9 @@ app.use(cors({
         if (allowedOrigins.includes(origin)) {
             return callback(null, true);
         }
-        return callback(new Error(`CORS: Origin ${origin} not allowed`));
+        // Return null (not an Error) so Express sends 403, not 500
+        console.warn(`CORS: Blocked request from origin: ${origin}`);
+        return callback(null, false);
     },
     credentials: true
 }));
