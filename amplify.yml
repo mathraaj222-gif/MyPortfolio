@@ -1,6 +1,25 @@
 version: 1
 applications:
+  # --- Public Portfolio Frontend ---
   - appRoot: frontend
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm ci
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+
+  # --- Private Admin Dashboard ---
+  - appRoot: admin
     frontend:
       phases:
         preBuild:
