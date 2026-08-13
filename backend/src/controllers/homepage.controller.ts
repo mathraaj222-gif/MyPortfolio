@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../config/database';
+import { isValidUrl, urlValidationError } from '../middleware/validate.middleware';
+
 
 export const getHomepage = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -38,6 +40,16 @@ export const getHomepage = async (req: Request, res: Response): Promise<void> =>
 export const updateHomepage = async (req: Request, res: Response): Promise<void> => {
   try {
     const { bio, image_url, linkedin_url, github_url, email_address, contact_no, resume_url } = req.body;
+
+    // Reject base64 data URIs — only proper https:// URLs are accepted
+    if (!isValidUrl(image_url)) {
+      res.status(400).json(urlValidationError('image_url'));
+      return;
+    }
+    if (!isValidUrl(resume_url)) {
+      res.status(400).json(urlValidationError('resume_url'));
+      return;
+    }
 
     const { data: existing, error: fetchError } = await db
       .from('Homepage')

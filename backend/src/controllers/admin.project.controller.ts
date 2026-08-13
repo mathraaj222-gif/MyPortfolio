@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../config/database';
+import { isValidUrl, isValidUrlArray, urlValidationError } from '../middleware/validate.middleware';
+
 
 export const createProject = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -17,6 +19,19 @@ export const createProject = async (req: Request, res: Response): Promise<void> 
         success: false,
         message: 'Validation Error: Project title and description are required.'
       });
+      return;
+    }
+
+    if (!isValidUrlArray(project_pic_url)) {
+      res.status(400).json(urlValidationError('project_pic_url'));
+      return;
+    }
+    if (!isValidUrl(project_live_link)) {
+      res.status(400).json(urlValidationError('project_live_link'));
+      return;
+    }
+    if (!isValidUrl(project_github_link)) {
+      res.status(400).json(urlValidationError('project_github_link'));
       return;
     }
 
@@ -72,6 +87,19 @@ export const updateProject = async (req: Request, res: Response): Promise<void> 
       project_github_link: project_github_link || null,
       project_pic_url: project_pic_url || []
     };
+
+    if (!isValidUrlArray(project_pic_url)) {
+      res.status(400).json(urlValidationError('project_pic_url'));
+      return;
+    }
+    if (!isValidUrl(project_live_link)) {
+      res.status(400).json(urlValidationError('project_live_link'));
+      return;
+    }
+    if (!isValidUrl(project_github_link)) {
+      res.status(400).json(urlValidationError('project_github_link'));
+      return;
+    }
 
     const { data, error } = await db
       .from('Projects')

@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../config/database';
+import { isValidUrl, urlValidationError } from '../middleware/validate.middleware';
+
 
 export const getSkills = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -29,6 +31,11 @@ export const createSkill = async (req: Request, res: Response): Promise<void> =>
 
     if (!skill_name) {
       res.status(400).json({ success: false, message: 'Validation Error: Skill name is mandatory.' });
+      return;
+    }
+
+    if (!isValidUrl(skill_image_url)) {
+      res.status(400).json(urlValidationError('skill_image_url'));
       return;
     }
 

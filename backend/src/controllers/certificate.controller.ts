@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../config/database';
+import { isValidUrl, urlValidationError } from '../middleware/validate.middleware';
+
 
 export const getCertificates = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -38,6 +40,11 @@ export const createCertificate = async (req: Request, res: Response): Promise<vo
         success: false,
         message: 'Validation Error: Name, bodies, date, and credential ID are required.'
       });
+      return;
+    }
+
+    if (!isValidUrl(certificate_img_url)) {
+      res.status(400).json(urlValidationError('certificate_img_url'));
       return;
     }
 
@@ -87,6 +94,11 @@ export const updateCertificate = async (req: Request, res: Response): Promise<vo
       date_received,
       credential_id
     };
+
+    if (!isValidUrl(certificate_img_url)) {
+      res.status(400).json(urlValidationError('certificate_img_url'));
+      return;
+    }
 
     const { data, error } = await db
       .from('Certificates')

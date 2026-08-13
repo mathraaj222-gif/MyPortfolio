@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import {
   User,
   Image,
-  Upload,
   Linkedin,
   Github,
   Mail,
@@ -60,27 +59,6 @@ export default function AdminHome() {
     fetchHomepage();
   }, []);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleResumeChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setResumeUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleSave = async () => {
     try {
@@ -169,9 +147,8 @@ export default function AdminHome() {
               Profile Photo
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-              {/* Image Preview Container */}
+              {/* Image Preview */}
               <div style={{
-                position: 'relative',
                 width: '120px',
                 height: '120px',
                 borderRadius: '16px',
@@ -180,7 +157,8 @@ export default function AdminHome() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: 'rgba(10, 7, 18, 0.4)'
+                backgroundColor: 'rgba(10, 7, 18, 0.4)',
+                flexShrink: 0
               }}>
                 {imageUrl ? (
                   <img src={imageUrl} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -188,64 +166,42 @@ export default function AdminHome() {
                   <Image size={32} style={{ color: 'var(--text-muted)' }} />
                 )}
               </div>
-
-              {/* Upload actions */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flexGrow: 1 }}>
-                <div>
-                  <label className="btn-secondary" style={{ display: 'inline-flex', cursor: 'pointer', fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
-                    <Upload size={14} />
-                    <span>Upload Image</span>
-                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
-                  </label>
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <span className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Or Image URL</span>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://..."
-                    style={{ fontSize: '0.8rem', padding: '0.5rem 0.75rem' }}
-                  />
-                </div>
+              <div className="form-group" style={{ marginBottom: 0, flexGrow: 1 }}>
+                <label className="form-label">Image URL</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://i.imgur.com/... or https://drive.google.com/..."
+                />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem', display: 'block' }}>
+                  Host your image on Imgur, Google Drive, or similar and paste the direct URL.
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Resume Upload Box */}
-          <div className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Resume Box */}
+          <div className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <h2 style={{ fontSize: '1.25rem', fontWeight: '700', borderBottom: '1px solid var(--border-glass)', paddingBottom: '1rem' }}>
               Resume / CV
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                <label className="btn-secondary" style={{ display: 'inline-flex', cursor: 'pointer', fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
-                  <Upload size={14} />
-                  <span>Upload Resume (PDF)</span>
-                  <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={handleResumeChange} />
-                </label>
-                {resumeUrl ? (
-                  <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 600 }}>
-                    Resume Uploaded ✔
-                  </span>
-                ) : (
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    No resume uploaded
-                  </span>
-                )}
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <span className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Or Resume URL</span>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={resumeUrl}
-                  onChange={(e) => setResumeUrl(e.target.value)}
-                  placeholder="https://..."
-                  style={{ fontSize: '0.8rem', padding: '0.5rem 0.75rem' }}
-                />
-              </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FileText size={15} />
+                Resume URL
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                value={resumeUrl}
+                onChange={(e) => setResumeUrl(e.target.value)}
+                placeholder="https://drive.google.com/file/d/... (direct PDF link)"
+              />
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem', display: 'block' }}>
+                Upload your PDF to Google Drive, Dropbox, or similar and paste the shareable link.
+              </span>
             </div>
           </div>
 
