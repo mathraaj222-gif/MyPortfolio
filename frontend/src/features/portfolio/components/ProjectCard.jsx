@@ -6,7 +6,7 @@ export default function ProjectCard({ project }) {
 
   const images = project.project_pic_url && project.project_pic_url.length > 0
     ? project.project_pic_url
-    : ['https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=600&h=350']; // premium placeholder
+    : ['https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=600&h=350'];
 
   const handlePrevImage = (e) => {
     e.stopPropagation();
@@ -37,76 +37,28 @@ export default function ProjectCard({ project }) {
         {images.length > 1 && (
           <>
             <button
+              id={`carousel-prev-${project.id}`}
               onClick={handlePrevImage}
-              style={{
-                position: 'absolute',
-                left: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'rgba(255, 255, 255, 0.75)',
-                border: 'none',
-                borderRadius: '50%',
-                width: '28px',
-                height: '28px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: '#1e293b',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.15)',
-                zIndex: 5,
-                transition: 'opacity 0.2s',
-              }}
-              className="carousel-nav-btn"
+              className="carousel-nav-btn carousel-prev"
+              aria-label="Previous image"
             >
               <ChevronLeft size={16} strokeWidth={3} />
             </button>
             <button
+              id={`carousel-next-${project.id}`}
               onClick={handleNextImage}
-              style={{
-                position: 'absolute',
-                right: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'rgba(255, 255, 255, 0.75)',
-                border: 'none',
-                borderRadius: '50%',
-                width: '28px',
-                height: '28px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: '#1e293b',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.15)',
-                zIndex: 5,
-                transition: 'opacity 0.2s',
-              }}
-              className="carousel-nav-btn"
+              className="carousel-nav-btn carousel-next"
+              aria-label="Next image"
             >
               <ChevronRight size={16} strokeWidth={3} />
             </button>
 
             {/* Pagination Indicators */}
-            <div style={{
-              position: 'absolute',
-              bottom: '8px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              display: 'flex',
-              gap: '4px',
-              zIndex: 5
-            }}>
+            <div className="carousel-dots">
               {images.map((_, idx) => (
                 <div
                   key={idx}
-                  style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    backgroundColor: idx === activeImgIdx ? '#0284c7' : 'rgba(255, 255, 255, 0.6)',
-                    transition: 'all 0.2s'
-                  }}
+                  className={`carousel-dot ${idx === activeImgIdx ? 'active' : ''}`}
                 />
               ))}
             </div>
@@ -123,9 +75,7 @@ export default function ProjectCard({ project }) {
         {project.project_tech_stacks && project.project_tech_stacks.length > 0 && (
           <div className="portfolio-project-footer">
             {project.project_tech_stacks.map((tech, idx) => (
-              <span key={idx} className="portfolio-project-stack">
-                {tech}
-              </span>
+              <span key={idx} className="portfolio-project-stack">{tech}</span>
             ))}
           </div>
         )}

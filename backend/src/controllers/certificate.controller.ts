@@ -15,10 +15,11 @@ export const getCertificates = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
     res.status(200).json({
       success: true,
-      count: data?.length || 0,
-      data: data || []
+      count: data?.length ?? 0,
+      data: data ?? []
     });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Internal Server Error fetching certificates.' });

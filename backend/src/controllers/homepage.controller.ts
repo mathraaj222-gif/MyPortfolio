@@ -25,6 +25,7 @@ export const getHomepage = async (req: Request, res: Response): Promise<void> =>
       resume_url: ""
     };
 
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
     res.status(200).json({
       success: true,
       data: homepageData

@@ -15,6 +15,7 @@ export const getSkills = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
     res.status(200).json({
       success: true,
       count: data?.length || 0,

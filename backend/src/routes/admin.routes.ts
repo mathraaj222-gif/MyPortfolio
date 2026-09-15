@@ -5,8 +5,12 @@ import { updateHomepage } from '../controllers/homepage.controller';
 import { createExperience, updateExperience, deleteExperience } from '../controllers/experience.controller';
 import { createEducation, updateEducation, deleteEducation } from '../controllers/education.controller';
 import { createCertificate, updateCertificate, deleteCertificate } from '../controllers/certificate.controller';
+import { verifyToken } from '../middleware/auth.middleware';
 
-const router = Router();  
+const router = Router();
+
+// Protect ALL admin routes — every request must carry a valid Bearer JWT
+router.use(verifyToken);
 
 router.post('/projects' , createProject);
 router.put('/projects/:id', updateProject);

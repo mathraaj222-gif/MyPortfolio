@@ -10,11 +10,16 @@ app = FastAPI(
 
 # Cross-Origin Resource Sharing (CORS) Security Rules Configuration
 # Allows your specific frontend application browser instance to talk to this endpoint
+import os
+
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001")
+_allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In live production settings, replace this with your actual frontend URL domain
+    allow_origins=_allowed_origins,  # Set ALLOWED_ORIGINS in .env for production
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["*"],
 )
 
