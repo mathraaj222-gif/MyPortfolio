@@ -1,0 +1,120 @@
+name: Deploy Admin Dashboard to Amplify
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'admin/**'   # Triggers only when admin dashboard files change
+
+jobs:
+  deploy-admin:
+    name: Build & Deploy Admin Dashboard
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install dependencies
+        working-directory: admin
+        run: npm ci
+
+      - name: Build admin dashboard
+        working-directory: admin
+        run: npm run build
+        # Produces: admin/dist/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # ── Zip the build artifacts ──
+      - name: Zip admin build artifacts
+        run: |
+          cd admin/dist
+          zip -r ../../admin-build-${{ github.sha }}.zip .
+          echo "✅ Zipped admin/dist → admin-build-${{ github.sha }}.zip"
+
+      # ── Upload zip to S3 (audit trail) ──
+      - name: Upload admin build ZIP to S3
+        run: |
+          aws s3 cp admin-build-${{ github.sha }}.zip \
+            s3://${{ secrets.EB_S3_BUCKET }}/deployments/admin-${{ github.sha }}.zip
+          echo "✅ Uploaded to s3://${{ secrets.EB_S3_BUCKET }}/deployments/admin-${{ github.sha }}.zip"
+
+      # ── Create Amplify manual deployment slot ──
+      # Returns a pre-signed uploadUrl and a jobId
+      - name: Create Amplify deployment slot
+        id: create_deployment
+        run: |
+          RESULT=$(aws amplify create-deployment \
+            --app-id "${{ secrets.AMPLIFY_ADMIN_APP_ID }}" \
+            --branch-name "${{ secrets.AMPLIFY_ADMIN_BRANCH }}")
+          echo "jobId=$(echo $RESULT | jq -r '.jobId')" >> $GITHUB_OUTPUT
+          echo "uploadUrl=$(echo $RESULT | jq -r '.zipUploadUrl')" >> $GITHUB_OUTPUT
+          echo "✅ Admin Amplify deployment slot created: $(echo $RESULT | jq -r '.jobId')"
+
+      # ── Upload the zip to Amplify via pre-signed URL ──
+      - name: Upload build ZIP to Amplify pre-signed URL
+        run: |
+          curl -X PUT \
+            -H "Content-Type: application/zip" \
+            --data-binary @admin-build-${{ github.sha }}.zip \
+            "${{ steps.create_deployment.outputs.uploadUrl }}"
+          echo "✅ Admin ZIP uploaded to Amplify"
+
+      # ── Start the Amplify deployment ──
+      - name: Start Amplify deployment
+        run: |
+          aws amplify start-deployment \
+            --app-id "${{ secrets.AMPLIFY_ADMIN_APP_ID }}" \
+            --branch-name "${{ secrets.AMPLIFY_ADMIN_BRANCH }}" \
+            --job-id "${{ steps.create_deployment.outputs.jobId }}"
+          echo "✅ Admin Amplify deployment started. Job ID: ${{ steps.create_deployment.outputs.jobId }}"
+
+      # ── Poll until SUCCEED or FAILED ──
+      - name: Wait for Amplify deployment to complete
+        run: |
+          JOB_ID="${{ steps.create_deployment.outputs.jobId }}"
+          APP_ID="${{ secrets.AMPLIFY_ADMIN_APP_ID }}"
+          BRANCH="${{ secrets.AMPLIFY_ADMIN_BRANCH }}"
+          MAX_WAIT=600   # 10 minutes
+          INTERVAL=15
+          ELAPSED=0
+
+          echo "⏳ Polling Admin Amplify deployment status (job: $JOB_ID)..."
+          while true; do
+            STATUS=$(aws amplify get-job \
+              --app-id "$APP_ID" \
+              --branch-name "$BRANCH" \
+              --job-id "$JOB_ID" \
+              --query 'job.summary.status' \
+              --output text)
+            echo "  Status: $STATUS (elapsed: ${ELAPSED}s)"
+
+            if [[ "$STATUS" == "SUCCEED" ]]; then
+              echo "✅ Admin dashboard deployed successfully!"
+              break
+            elif [[ "$STATUS" == "FAILED" || "$STATUS" == "CANCELLED" ]]; then
+              echo "❌ Admin Amplify deployment $STATUS!"
+              exit 1
+            fi
+
+            ELAPSED=$((ELAPSED + INTERVAL))
+            if [[ $ELAPSED -ge $MAX_WAIT ]]; then
+              echo "❌ Timed out waiting for Admin Amplify deployment after ${MAX_WAIT}s"
+              exit 1
+            fi
+            sleep $INTERVAL
+          done

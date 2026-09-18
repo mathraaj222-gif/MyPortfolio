@@ -66,14 +66,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 8. Upload ZIP to your S3 bucket
+      # 8. Sync full repo source snapshot to S3 (audit trail & source-of-truth)
+      #    Stored at: s3://<bucket>/source/<sha>/
+      - name: Sync source snapshot to S3
+        run: |
+          aws s3 sync . \
+            s3://${{ secrets.EB_S3_BUCKET }}/source/${{ github.sha }}/ \
+            --exclude ".git/*" \
+            --exclude "node_modules/*" \
+            --exclude "backend/node_modules/*" \
+            --exclude "frontend/node_modules/*" \
+            --exclude "admin/node_modules/*" \
+            --delete
+
+      # 9. Upload deployment ZIP to S3
+      #    Stored at: s3://<bucket>/deployments/backend-<sha>.zip
       - name: Upload deployment package to S3
         run: |
           VERSION_LABEL="backend-${{ github.sha }}"
           aws s3 cp deploy-backend.zip \
             s3://${{ secrets.EB_S3_BUCKET }}/deployments/${VERSION_LABEL}.zip
 
-      # 9. Create a new EB application version pointing at that S3 object
+      # 10. Create a new EB application version pointing at that S3 object
       - name: Create Elastic Beanstalk application version
         run: |
           VERSION_LABEL="backend-${{ github.sha }}"
@@ -83,7 +97,7 @@ jobs:
             --source-bundle S3Bucket="${{ secrets.EB_S3_BUCKET }}",S3Key="deployments/${VERSION_LABEL}.zip" \
             --auto-create-application
 
-      # 10. Deploy the new version to your EB environment
+      # 11. Deploy the new version to your EB environment
       - name: Deploy to Elastic Beanstalk environment
         run: |
           VERSION_LABEL="backend-${{ github.sha }}"
@@ -91,9 +105,9 @@ jobs:
             --environment-name "${{ secrets.EB_ENV_NAME }}" \
             --version-label "${VERSION_LABEL}"
 
-      # 11. Wait for deployment to finish
+      # 12. Wait for deployment to finish
       - name: Wait for environment to be ready
         run: |
           aws elasticbeanstalk wait environment-updated \
             --environment-name "${{ secrets.EB_ENV_NAME }}"
-          echo "Deployment complete!"
+          echo "✅ Backend deployment complete! Version: backend-${{ github.sha }}"
