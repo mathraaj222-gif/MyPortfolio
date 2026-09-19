@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'frontend/**'   # Triggers only when portfolio frontend files change
+  workflow_dispatch:    # Allow manual trigger from GitHub Actions UI
 
 jobs:
   # ─────────────────────────────────────────────

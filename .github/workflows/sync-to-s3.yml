@@ -1,0 +1,68 @@
+﻿name: Sync Repository to S3
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Runs on EVERY push to main (no path filter).
+#  Keeps the S3 bucket in sync with the latest state of the GitHub repo.
+#  This is the source-of-truth sync that ensures S3 always mirrors GitHub.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:    # Allow manual trigger from GitHub Actions UI
+
+jobs:
+  sync:
+    name: Sync GitHub Repo → S3
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the full repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 3. Sync the entire repo to S3 (latest snapshot at s3://<bucket>/source/latest/)
+      #    Also snapshot at s3://<bucket>/source/<sha>/ for version history
+      - name: Sync repo to S3 (latest)
+        run: |
+          echo "Syncing to s3://${{ secrets.EB_S3_BUCKET }}/source/latest/ ..."
+          aws s3 sync . \
+            s3://${{ secrets.EB_S3_BUCKET }}/source/latest/ \
+            --exclude ".git/*" \
+            --exclude "node_modules/*" \
+            --exclude "*/node_modules/*" \
+            --exclude "*/dist/*" \
+            --exclude "*.zip" \
+            --delete
+          echo "Latest snapshot synced."
+
+      - name: Snapshot repo to S3 (versioned by commit SHA)
+        run: |
+          echo "Snapshotting to s3://${{ secrets.EB_S3_BUCKET }}/source/${{ github.sha }}/ ..."
+          aws s3 sync . \
+            s3://${{ secrets.EB_S3_BUCKET }}/source/${{ github.sha }}/ \
+            --exclude ".git/*" \
+            --exclude "node_modules/*" \
+            --exclude "*/node_modules/*" \
+            --exclude "*/dist/*" \
+            --exclude "*.zip"
+          echo "Versioned snapshot done: s3://${{ secrets.EB_S3_BUCKET }}/source/${{ github.sha }}/"
+
+      - name: Print S3 summary
+        run: |
+          echo "========================================="
+          echo "S3 Sync Complete"
+          echo "  Bucket : ${{ secrets.EB_S3_BUCKET }}"
+          echo "  Commit : ${{ github.sha }}"
+          echo "  Branch : ${{ github.ref_name }}"
+          echo "  Latest : s3://${{ secrets.EB_S3_BUCKET }}/source/latest/"
+          echo "  Version: s3://${{ secrets.EB_S3_BUCKET }}/source/${{ github.sha }}/"
+          echo "========================================="
