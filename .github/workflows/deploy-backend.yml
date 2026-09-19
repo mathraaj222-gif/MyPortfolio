@@ -42,34 +42,36 @@ jobs:
         run: npm run build
 
       # 6. Create the deployment ZIP
-      #    Elastic Beanstalk expects a ZIP containing:
-      #      - Dockerfile        (EB builds the Docker image from this)
-      #      - dist/             (compiled JS)
-      #      - prisma/           (schema + migrations)
-      #      - package*.json     (needed by Dockerfile RUN npm ci)
-      #      - .ebextensions/    (EB platform config)
+      #    EB uses Dockerfile.prod (renamed to Dockerfile inside ZIP):
+      #      - No TypeScript compilation inside Docker (dist/ is pre-built here)
+      #      - Only production deps installed (npm ci --omit=dev)
+      #      - Faster deploys, smaller image
       - name: Create deployment package
         run: |
-          cd backend
-          zip -r ../deploy-backend.zip \
-            Dockerfile \
-            package.json \
-            package-lock.json \
-            dist/ \
-            prisma/ \
-            .ebextensions/
+          mkdir -p eb-package
+          # Use the production Dockerfile (skips TypeScript build inside Docker)
+          cp backend/Dockerfile.prod eb-package/Dockerfile
+          cp backend/package.json    eb-package/package.json
+          cp backend/package-lock.json eb-package/package-lock.json
+          cp -r backend/dist          eb-package/dist
+          cp -r backend/prisma        eb-package/prisma
+          cp -r backend/.ebextensions eb-package/.ebextensions
+          cd eb-package
+          zip -r ../deploy-backend.zip .
+          cd ..
+          rm -rf eb-package
 
       # Verify ZIP uses forward slashes (Linux unzip requirement)
-      # Backslashes from Windows tools cause EB deployment to fail
       - name: Verify ZIP path separators
         run: |
           if unzip -l deploy-backend.zip | grep -q '\\'; then
-            echo "❌ ZIP contains backslashes in paths — will fail on EB Linux unzip!"
+            echo "❌ ZIP contains backslashes — will fail on EB Linux unzip!"
             exit 1
           fi
-          echo "✅ ZIP path separators are valid (forward slashes only)"
+          echo "✅ ZIP path separators valid (forward slashes only)"
           echo "📦 ZIP contents:"
-          unzip -l deploy-backend.zip | head -20
+          unzip -l deploy-backend.zip | head -25
+
 
       # 7. Configure AWS credentials from GitHub Secrets
       - name: Configure AWS credentials
