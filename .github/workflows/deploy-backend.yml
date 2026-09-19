@@ -59,6 +59,18 @@ jobs:
             prisma/ \
             .ebextensions/
 
+      # Verify ZIP uses forward slashes (Linux unzip requirement)
+      # Backslashes from Windows tools cause EB deployment to fail
+      - name: Verify ZIP path separators
+        run: |
+          if unzip -l deploy-backend.zip | grep -q '\\'; then
+            echo "❌ ZIP contains backslashes in paths — will fail on EB Linux unzip!"
+            exit 1
+          fi
+          echo "✅ ZIP path separators are valid (forward slashes only)"
+          echo "📦 ZIP contents:"
+          unzip -l deploy-backend.zip | head -20
+
       # 7. Configure AWS credentials from GitHub Secrets
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
