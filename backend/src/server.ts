@@ -1,5 +1,6 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import publicRoutes from './routes/public.route';
@@ -30,6 +31,10 @@ app.use(cors({
   credentials: true
 }));
 
+// ─── Compression ─────────────────────────────────────────────────────────────
+// Gzip all JSON responses — reduces payload size by ~70% over the wire
+app.use(compression());
+
 // ─── Body Parsing ────────────────────────────────────────────────────────────
 // 1mb is plenty — base64 images are rejected at controller level anyway
 app.use(express.json({ limit: '1mb' }));
@@ -53,6 +58,18 @@ const adminLimiter = rateLimit({
   legacyHeaders: false,
   message: { success: false, message: 'Too many admin requests. Please slow down.' }
 });
+
+// ─── Preflight (OPTIONS) ──────────────────────────────────────────────────────
+// Explicitly handle CORS preflight before any rate limiter so OPTIONS requests
+// are never blocked or counted against the rate limit.
+app.options('*', cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(null, false);
+  },
+  credentials: true,
+}));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 

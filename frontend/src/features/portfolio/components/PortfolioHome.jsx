@@ -54,6 +54,9 @@ export default function PortfolioHome({ data }) {
           src={avatarUrl}
           alt="Professional Profile"
           className="portfolio-avatar-img"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
           onError={(e) => {
             // fallback on error
             e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256&h=256';

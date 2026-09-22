@@ -8,6 +8,8 @@ export default function SkillBadge({ skill }) {
           src={skill.skill_image_url}
           alt={`${skill.skill_name} logo`}
           className="portfolio-skill-icon"
+          loading="lazy"
+          decoding="async"
           onError={(e) => {
             // fallback if image URL fails (e.g. devicon CDN down)
             e.target.style.display = 'none';

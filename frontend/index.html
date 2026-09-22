@@ -24,7 +24,11 @@
     <!-- Premium Google Fonts for modern styling -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Only 3 weights used in CSS (400/600/700) — removed 300,500,800 saves ~40KB -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Pre-warm the backend API (CloudFront) so fetch() starts without DNS delay -->
+    <link rel="dns-prefetch" href="https://d9rjg6j3dykkv.cloudfront.net">
+    <link rel="preconnect" href="https://d9rjg6j3dykkv.cloudfront.net" crossorigin>
   </head>
   <body>
     <div id="root"></div>
