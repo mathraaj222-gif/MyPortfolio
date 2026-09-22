@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Admin dashboard Vite config
+// Admin dashboard Vite config 2
 export default defineConfig({
   plugins: [react()],
   server: {
