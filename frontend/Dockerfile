@@ -33,5 +33,5 @@ ENV PORT=3000
 # Cloud Run automatically assigns the PORT environment variable
 EXPOSE $PORT
 
-# Start serving the static files on the assigned port 2
+# Start serving the static files on the assigned port 3
 CMD serve -s dist -l $PORT
