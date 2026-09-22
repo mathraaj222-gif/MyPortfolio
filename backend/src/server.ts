@@ -12,9 +12,10 @@ dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000,http://localhost:3001')
-  .split(',')
-  .map(o => o.trim());
+const allowedOrigins = [
+  process.env.PORTFOLIO_FRONTEND_URL || 'http://localhost:3000',
+  process.env.ADMIN_FRONTEND_URL    || 'http://localhost:3001',
+].map(o => o.trim()).filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {

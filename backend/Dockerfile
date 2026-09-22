@@ -31,7 +31,8 @@ COPY --from=builder /app/prisma ./prisma
 ENV DATABASE_URL=""
 ENV SUPABASE_URL=""
 ENV SUPABASE_ANON_KEY=""
-ENV FRONTEND_URL=""
+ENV PORTFOLIO_FRONTEND_URL=""
+ENV ADMIN_FRONTEND_URL=""
 
 # Expose port (Cloud Run sets PORT env var automatically)
 ENV PORT=5000
