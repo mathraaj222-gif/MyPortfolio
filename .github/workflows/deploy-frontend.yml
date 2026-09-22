@@ -33,6 +33,13 @@ jobs:
 
       - name: Build frontend
         working-directory: frontend
+        env:
+          # VITE_* vars are baked into the JS bundle at compile time by Vite.
+          # Must be injected HERE at build — Amplify env var panel has no effect
+          # on manual ZIP deployments. Use the CloudFront HTTPS URL (not EB directly)
+          # so the Amplify app (HTTPS) never makes insecure mixed-content HTTP calls.
+          # Secret value: https://d9rjg6j3dykkv.cloudfront.net/api/v1
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: npm run build
         # Produces: frontend/dist/
 
@@ -63,8 +70,8 @@ jobs:
         id: create_deployment
         run: |
           RESULT=$(aws amplify create-deployment \
-            --app-id "${{ secrets.AMPLIFY_APP_ID }}" \
-            --branch-name "${{ secrets.AMPLIFY_BRANCH }}")
+            --app-id "${{ secrets.AMPLIFY_FRONTEND_APP_ID }}" \
+            --branch-name "${{ secrets.AMPLIFY_FRONTEND_BRANCH }}")
           echo "jobId=$(echo $RESULT | jq -r '.jobId')" >> $GITHUB_OUTPUT
           echo "uploadUrl=$(echo $RESULT | jq -r '.zipUploadUrl')" >> $GITHUB_OUTPUT
           echo "✅ Amplify deployment slot created: $(echo $RESULT | jq -r '.jobId')"
@@ -82,8 +89,8 @@ jobs:
       - name: Start Amplify deployment
         run: |
           aws amplify start-deployment \
-            --app-id "${{ secrets.AMPLIFY_APP_ID }}" \
-            --branch-name "${{ secrets.AMPLIFY_BRANCH }}" \
+            --app-id "${{ secrets.AMPLIFY_FRONTEND_APP_ID }}" \
+            --branch-name "${{ secrets.AMPLIFY_FRONTEND_BRANCH }}" \
             --job-id "${{ steps.create_deployment.outputs.jobId }}"
           echo "✅ Amplify deployment started. Job ID: ${{ steps.create_deployment.outputs.jobId }}"
 
@@ -91,8 +98,8 @@ jobs:
       - name: Wait for Amplify deployment to complete
         run: |
           JOB_ID="${{ steps.create_deployment.outputs.jobId }}"
-          APP_ID="${{ secrets.AMPLIFY_APP_ID }}"
-          BRANCH="${{ secrets.AMPLIFY_BRANCH }}"
+          APP_ID="${{ secrets.AMPLIFY_FRONTEND_APP_ID }}"
+          BRANCH="${{ secrets.AMPLIFY_FRONTEND_BRANCH }}"
           MAX_WAIT=600   # 10 minutes
           INTERVAL=15
           ELAPSED=0

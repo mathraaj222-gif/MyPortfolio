@@ -30,6 +30,13 @@ jobs:
 
       - name: Build admin dashboard
         working-directory: admin
+        env:
+          # VITE_* vars are baked into the JS bundle at compile time by Vite.
+          # Must be injected HERE at build — Amplify env var panel has no effect
+          # on manual ZIP deployments. Use the CloudFront HTTPS URL (not EB directly)
+          # so the Amplify app (HTTPS) never makes insecure mixed-content HTTP calls.
+          # Secret value: https://d9rjg6j3dykkv.cloudfront.net/api/v1
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: npm run build
         # Produces: admin/dist/
 
