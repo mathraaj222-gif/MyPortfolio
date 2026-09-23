@@ -2,10 +2,17 @@
  * coreApi.js
  * Centralised API client for the Admin panel.
  *
- * Every call to an /api/v1/admin/* endpoint carries
+ * All Admin API paths are strictly namespaced under /api/v1/admin/*:
+ *   GET    /admin/homepage
+ *   PUT    /admin/homepage
+ *   GET    /admin/projects
+ *   POST   /admin/projects
+ *   PUT    /admin/projects/:id
+ *   DELETE /admin/projects/:id
+ *   ...and so on.
+ *
+ * Every request automatically carries:
  *   Authorization: Bearer <VITE_ADMIN_TOKEN>
- * This module injects that header automatically and handles
- * safe JSON parsing and error reporting.
  */
 
 const RAW_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
@@ -29,7 +36,7 @@ async function safeParseJson(res) {
 }
 
 /**
- * Authenticated fetch — sends the Bearer token for write operations.
+ * Authenticated fetch — sends the Bearer token for all admin operations.
  * @param {string} path - path relative to API_BASE_URL, e.g. '/admin/homepage'
  * @param {RequestInit} options - standard fetch options (method, body, etc.)
  * @returns {Promise<any>} parsed JSON response body
@@ -54,35 +61,16 @@ async function authFetch(path, options = {}) {
   }
 }
 
-/**
- * Safe public GET request helper.
- * @param {string} path - path relative to API_BASE_URL
- */
-async function publicGet(path) {
-  try {
-    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    const res = await fetch(`${API_BASE_URL}${normalizedPath}`);
-    return await safeParseJson(res);
-  } catch (err) {
-    console.error(`publicGet failed for ${path}:`, err);
-    return {
-      success: false,
-      data: null,
-      message: err.message || 'Failed to connect to backend server.',
-    };
-  }
-}
+// ─── Admin Read Helpers (All under /admin/*) ──────────────────────────────────
 
-// ─── Public read helpers ─────────────────────────────────────────────────────
+export const getHomepage = () => authFetch('/admin/homepage');
+export const getProjects = () => authFetch('/admin/projects');
+export const getExperiences = () => authFetch('/admin/experiences');
+export const getEducation = () => authFetch('/admin/education');
+export const getSkills = () => authFetch('/admin/skills');
+export const getCertificates = () => authFetch('/admin/certificates');
 
-export const getHomepage = () => publicGet('/homepage');
-export const getProjects = () => publicGet('/projects');
-export const getExperiences = () => publicGet('/experiences');
-export const getEducation = () => publicGet('/education');
-export const getSkills = () => publicGet('/skills');
-export const getCertificates = () => publicGet('/certificates');
-
-// ─── Admin write helpers (JWT injected automatically) ─────────────────────────
+// ─── Admin Write Helpers (All under /admin/*) ─────────────────────────────────
 
 // Homepage
 export const updateHomepage = (body) =>
