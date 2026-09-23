@@ -37,6 +37,10 @@ jobs:
           # so the Amplify app (HTTPS) never makes insecure mixed-content HTTP calls.
           # Secret value: https://d9rjg6j3dykkv.cloudfront.net/api/v1
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          # JWT token that authorises admin write requests to the backend.
+          # Generated with: node -e "jwt.sign({role:'admin'}, ADMIN_SECRET, {expiresIn:'365d'})"
+          # Must match the ADMIN_SECRET set in the EB environment.
+          VITE_ADMIN_TOKEN: ${{ secrets.VITE_ADMIN_TOKEN }}
         run: npm run build
         # Produces: admin/dist/
 
