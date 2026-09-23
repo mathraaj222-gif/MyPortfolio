@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GraduationCap, Plus, Edit2, Trash2, Save } from 'lucide-react';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+import { getEducation, createEducation, updateEducation, deleteEducation } from '../../../services/coreApi';
 
 const monthsList = [
   { value: "01", label: "January" },
@@ -44,8 +43,7 @@ export default function AdminEducation() {
 
   const fetchEducation = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/education`);
-      const result = await res.json();
+      const result = await getEducation();
       if (result.success) {
         setEducationList(result.data || []);
       }
@@ -102,10 +100,7 @@ export default function AdminEducation() {
   const handleDelete = async (id) => {
     if (confirm("Are you sure you want to delete this education record?")) {
       try {
-        const res = await fetch(`${API_BASE_URL}/admin/education/${id}`, {
-          method: 'DELETE'
-        });
-        const result = await res.json();
+        const result = await deleteEducation(id);
         if (result.success) {
           fetchEducation();
         } else {
@@ -151,21 +146,10 @@ export default function AdminEducation() {
     };
 
     try {
-      const url = editingId
-        ? `${API_BASE_URL}/admin/education/${editingId}`
-        : `${API_BASE_URL}/admin/education`;
+      const result = editingId
+        ? await updateEducation(editingId, payload)
+        : await createEducation(payload);
 
-      const method = editingId ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const result = await res.json();
       if (result.success) {
         setShowForm(false);
         fetchEducation();

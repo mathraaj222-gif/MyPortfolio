@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getHomepage, updateHomepage } from '../../../services/coreApi';
 import {
   User,
   Image,
@@ -26,7 +27,7 @@ const Whatsapp = ({ size = 16, style, ...props }) => (
   </svg>
 );
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+
 
 export default function AdminHome() {
   const [aboutText, setAboutText] = useState("");
@@ -41,8 +42,7 @@ export default function AdminHome() {
   useEffect(() => {
     const fetchHomepage = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/homepage`);
-        const result = await response.json();
+        const result = await getHomepage();
         if (result.success && result.data) {
           setAboutText(result.data.bio || "");
           setImageUrl(result.data.image_url || "");
@@ -62,22 +62,15 @@ export default function AdminHome() {
 
   const handleSave = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/homepage`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          bio: aboutText,
-          image_url: imageUrl,
-          linkedin_url: linkedin,
-          github_url: github,
-          email_address: email,
-          contact_no: contact_no,
-          resume_url: resumeUrl,
-        }),
+      const result = await updateHomepage({
+        bio: aboutText,
+        image_url: imageUrl,
+        linkedin_url: linkedin,
+        github_url: github,
+        email_address: email,
+        contact_no: contact_no,
+        resume_url: resumeUrl,
       });
-      const result = await response.json();
       if (result.success) {
         setIsSaved(true);
         setTimeout(() => {

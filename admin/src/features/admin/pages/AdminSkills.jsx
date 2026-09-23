@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Code, Plus, Trash2, Search } from 'lucide-react';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+import { getSkills, createSkill, deleteSkill } from '../../../services/coreApi';
 
 const suggestedSkills = [
   { name: "React", iconSlug: "react" },
@@ -57,8 +56,7 @@ export default function AdminSkills() {
 
   const fetchSkills = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/skills`);
-      const result = await res.json();
+      const result = await getSkills();
       if (result.success) {
         setSkills(result.data || []);
       }
@@ -91,17 +89,10 @@ export default function AdminSkills() {
 
   const saveSkill = async (name, imageUrl) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/skills`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          skill_name: name,
-          skill_image_url: imageUrl
-        })
+      const result = await createSkill({
+        skill_name: name,
+        skill_image_url: imageUrl
       });
-      const result = await res.json();
       if (result.success) {
         fetchSkills();
         setSearchQuery("");
@@ -116,10 +107,7 @@ export default function AdminSkills() {
   const handleDeleteSkill = async (id) => {
     if (confirm("Are you sure you want to delete this skill?")) {
       try {
-        const res = await fetch(`${API_BASE_URL}/admin/skills/${id}`, {
-          method: 'DELETE'
-        });
-        const result = await res.json();
+        const result = await deleteSkill(id);
         if (result.success) {
           fetchSkills();
         } else {
