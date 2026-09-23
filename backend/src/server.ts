@@ -81,7 +81,7 @@ app.get('/api/v1/portfolio', publicLimiter, async (req: Request, res: Response) 
     const [homepageRes, experiencesRes, educationRes, projectsRes, skillsRes, certificatesRes] = await Promise.all([
       db.from('Homepage').select('*').limit(1),
       db.from('Experiance').select('*').order('start_date', { ascending: false }),
-      db.from('Education').select('*').order('start_year', { ascending: false }),
+      db.from('Education').select('*').order('start_date', { ascending: false }),
       db.from('Projects').select('*').order('id', { ascending: false }),
       db.from('Skills').select('*').order('id', { ascending: true }),
       db.from('Certificates').select('*').order('date_received', { ascending: false }),
