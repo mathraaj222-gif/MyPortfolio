@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { FolderGit2, Plus, Edit2, Trash2, ExternalLink, Save, Upload } from 'lucide-react';
 import { getProjects, createProject, updateProject, deleteProject } from '../../../services/coreApi';
+import AdminDocumentUploader from '../../../components/AdminDocumentUploader';
+import AdminDocumentList from '../../../components/AdminDocumentList';
+import { uploadEntityDocument } from '../../../services/aiApi';
 
 export default function AdminProjects() {
   const [projects, setProjects] = useState([]);
@@ -16,6 +19,8 @@ export default function AdminProjects() {
   const [newTech, setNewTech] = useState("");
   const [projectLiveLink, setProjectLiveLink] = useState("");
   const [projectGithubLink, setProjectGithubLink] = useState("");
+  const [attachedDoc, setAttachedDoc] = useState(null);
+  const [docRefreshKey, setDocRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchProjects();
@@ -42,6 +47,7 @@ export default function AdminProjects() {
     setNewTech("");
     setProjectLiveLink("");
     setProjectGithubLink("");
+    setAttachedDoc(null);
     setShowForm(true);
   };
 
@@ -55,6 +61,7 @@ export default function AdminProjects() {
     setNewTech("");
     setProjectLiveLink(project.project_live_link || "");
     setProjectGithubLink(project.project_github_link || "");
+    setAttachedDoc(null);
     setShowForm(true);
   };
 
@@ -137,6 +144,11 @@ export default function AdminProjects() {
         : await createProject(payload);
 
       if (result.success) {
+        const projectId = editingId || result.data?.id || '';
+        if (attachedDoc && projectId) {
+          await uploadEntityDocument(attachedDoc, 'project', projectId, projectTitle);
+          setDocRefreshKey(k => k + 1);
+        }
         setShowForm(false);
         fetchProjects();
       } else {
@@ -309,6 +321,23 @@ export default function AdminProjects() {
               />
             </div>
           </div>
+
+          {/* Optional Supporting Technical Document for AI Guide */}
+          <AdminDocumentUploader
+            file={attachedDoc}
+            onFileChange={setAttachedDoc}
+            label="Supporting Technical Document for AI Guide"
+            helperText="Optional: Upload an architecture spec, system design PDF, case study, or README to provide deep semantic context for your AI Guide."
+          />
+
+          {/* Show existing documents for this project (only when editing) */}
+          {editingId && (
+            <AdminDocumentList
+              entityType="project"
+              entityId={String(editingId)}
+              refreshKey={docRefreshKey}
+            />
+          )}
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', borderTop: '1px solid var(--border-glass)', paddingTop: '1.5rem' }}>
             <button type="submit" className="btn-primary">

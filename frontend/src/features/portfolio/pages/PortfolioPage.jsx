@@ -6,6 +6,12 @@ import PortfolioProjects from '../components/PortfolioProjects';
 import PortfolioSkills from '../components/PortfolioSkills';
 import PortfolioCertificates from '../components/PortfolioCertificates';
 
+import { AiGuideProvider, useAiGuide } from '../../ai-guide/context/AiGuideContext';
+import AiGuideBar from '../../ai-guide/components/AiGuideBar';
+import AiGuideCanvas from '../../ai-guide/components/AiGuideCanvas';
+import AiFloatingTrigger from '../../ai-guide/components/AiFloatingTrigger';
+import { Sparkles, ArrowLeft } from 'lucide-react';
+
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1').replace(/\/$/, '');
 const CACHE_KEY = 'portfolio_data_cache';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes — matches server Cache-Control
@@ -34,7 +40,9 @@ function HomeSkeleton() {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
         <SkeletonBlock width="320px" height="320px" radius="44px" />
         <div style={{ display: 'flex', gap: '1rem' }}>
-          {[1,2,3,4].map(i => <SkeletonBlock key={i} width="46px" height="46px" radius="12px" />)}
+          {[1, 2, 3, 4].map((i) => (
+            <SkeletonBlock key={i} width="46px" height="46px" radius="12px" />
+          ))}
         </div>
       </div>
     </div>
@@ -78,63 +86,36 @@ function writeCache(data) {
   }
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-export default function PortfolioPage() {
+// ─── Inner Page View that consumes AiGuideContext ──────────────────────────────
+function PortfolioInnerView({
+  homepageData,
+  experiences,
+  education,
+  projects,
+  skills,
+  certificates,
+  portfolioData,
+}) {
   const [activeSection, setActiveSection] = useState('home');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const { activeMode, isMinimized, exitGuide, enterGenUI } = useAiGuide();
+  const navContainerRef = useRef(null);
 
-  // Individual loading states — each section renders independently
-  const [homepageData, setHomepageData] = useState(null);
-  const [experiences, setExperiences] = useState(null);   // null = loading, [] = loaded/empty
-  const [education, setEducation] = useState(null);
-  const [projects, setProjects] = useState(null);
-  const [skills, setSkills] = useState(null);
-  const [certificates, setCertificates] = useState(null);
+  const isGenUiActive = activeMode === 'genui' && !isMinimized;
 
-  const [fetchError, setFetchError] = useState(false);
-  const hasFetchedRef = useRef(false);
-
-  // ── Data fetching with stale-while-revalidate ─────────────────────────────
+  // ── Scroll active nav item into view ─────────────────────────
   useEffect(() => {
-    if (hasFetchedRef.current) return;
-    hasFetchedRef.current = true;
-
-    const applyData = (data) => {
-      setHomepageData(data.homepage ?? null);
-      setExperiences(data.experiences ?? []);
-      setEducation(data.education ?? []);
-      setProjects(data.projects ?? []);
-      setSkills(data.skills ?? []);
-      setCertificates(data.certificates ?? []);
-    };
-
-    // 1️⃣ Immediately render from cache — zero perceived latency on repeat visits
-    const cached = readCache();
-    if (cached) applyData(cached);
-
-    // 2️⃣ Always fetch fresh data in the background
-    fetch(`${API_BASE_URL}/portfolio`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((res) => {
-        if (res.success && res.data) {
-          applyData(res.data);
-          writeCache(res.data); // update cache for next visit
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to load portfolio data:', err);
-        // Only show error screen if there was no cached data to fall back on
-        if (!cached) setFetchError(true);
-      });
-  }, []);
+    if (navContainerRef.current && activeSection && !isGenUiActive) {
+      const activeElement = navContainerRef.current.querySelector('.active');
+      if (activeElement) {
+        activeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [activeSection, isGenUiActive]);
 
   // ── IntersectionObserver — active nav section spy ─────────────────────────
   useEffect(() => {
-    // Wait until at least homepage data is loaded before observing
-    if (homepageData === null && !fetchError) return;
+    if (isGenUiActive || homepageData === null) return;
 
     const sections = ['home', 'experience', 'education', 'projects', 'skills', 'certificates'];
     const observer = new IntersectionObserver(
@@ -152,45 +133,31 @@ export default function PortfolioPage() {
     });
 
     return () => observer.disconnect();
-  }, [homepageData, fetchError]);
+  }, [homepageData, isGenUiActive]);
 
   const scrollToSection = (id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-      setActiveSection(id);
+    if (isGenUiActive) {
+      exitGuide();
     }
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+        setActiveSection(id);
+      }
+    }, 50);
     setMobileNavOpen(false);
   };
 
-  // ── Error screen ──────────────────────────────────────────────────────────
-  if (fetchError) {
-    return (
-      <div style={{
-        display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        alignItems: 'center', minHeight: '100vh', backgroundColor: '#f4f4f7',
-        color: '#1e293b', fontFamily: 'sans-serif', gap: '1rem', padding: '2rem'
-      }}>
-        <div style={{ fontSize: '3rem' }}>⚠️</div>
-        <h2 style={{ fontWeight: 700, fontSize: '1.5rem', margin: 0 }}>Could not load portfolio</h2>
-        <p style={{ color: '#64748b', textAlign: 'center', maxWidth: '400px' }}>
-          The backend server appears to be offline or unreachable. Please try again in a moment.
-        </p>
-        <button
-          onClick={() => { setFetchError(false); hasFetchedRef.current = false; }}
-          style={{
-            padding: '0.7rem 1.5rem', background: '#0284c7', color: 'white',
-            border: 'none', borderRadius: '10px', fontWeight: 600, cursor: 'pointer', fontSize: '0.95rem'
-          }}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
   const navLinks = ['home', 'experience', 'education', 'projects', 'skills', 'certificates'];
-  const navLabels = { home: 'About Me', experience: 'Experience', education: 'Education', projects: 'Projects', skills: 'Skills', certificates: 'Certificates' };
+  const navLabels = {
+    home: 'About Me',
+    experience: 'Experience',
+    education: 'Education',
+    projects: 'Projects',
+    skills: 'Skills',
+    certificates: 'Certificates',
+  };
 
   return (
     <div className="portfolio-root">
@@ -203,27 +170,111 @@ export default function PortfolioPage() {
       {/* Navigation Header */}
       <nav className="portfolio-nav">
         <div className="portfolio-nav-container">
-          <a href="#home" onClick={(e) => { e.preventDefault(); scrollToSection('home'); }} className="portfolio-logo-area">
-            <div className="portfolio-logo-circle">M</div>
+          <a
+            href="#home"
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToSection('home');
+            }}
+            className="portfolio-logo-area"
+          >
+            <img src="/mrblack.png" alt="Mathanraaj Logo" style={{ objectFit: 'contain', width: '45px', height: '45px', background: 'transparent', border: 'none' }} />
             <span className="portfolio-logo-text">
               {homepageData?.full_name || 'Mathanraaj'}
             </span>
           </a>
 
-          {/* Desktop nav */}
-          <ul className="portfolio-menu">
-            {navLinks.map((id) => (
-              <li key={id}>
-                <a
-                  href={`#${id}`}
-                  onClick={(e) => { e.preventDefault(); scrollToSection(id); }}
-                  className={`portfolio-menu-link ${activeSection === id ? 'active' : ''}`}
+          {/* Desktop nav & GenUI actions */}
+          <div className="portfolio-nav-right" style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+            {isGenUiActive ? (
+              <div style={{ display: 'flex', alignItems: 'center', flex: 1, paddingLeft: '1rem' }}>
+                <button
+                  onClick={exitGuide}
+                  className="ai-canvas-back-btn"
+                  title="Return to static portfolio view"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'transparent', border: 'none', color: '#1e293b', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}
                 >
-                  {navLabels[id]}
-                </a>
-              </li>
-            ))}
-          </ul>
+                  <ArrowLeft size={16} />
+                  <span>Go Back to Portfolio</span>
+                </button>
+              </div>
+            ) : (
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  alignItems: 'center',
+                  paddingRight: '1rem',
+                }}
+              >
+                <div
+                  className="cylinder-nav-container"
+                  style={{
+                    height: '36px',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    borderRadius: '18px',
+                    backgroundColor: '#f8fafc',
+                    padding: '0 1.25rem',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+                  }}
+                >
+                  <ul
+                    style={{
+                      listStyle: 'none',
+                      margin: 0,
+                      padding: 0,
+                      transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                      transform: `translateY(-${Math.max(0, navLinks.indexOf(activeSection)) * 36}px)`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    {navLinks.map((id) => (
+                      <li key={id} style={{ height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <a
+                          href={`#${id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            scrollToSection(id);
+                          }}
+                          style={{
+                            textDecoration: 'none',
+                            color: '#0f172a',
+                            fontWeight: 600,
+                            fontSize: '0.85rem',
+                            letterSpacing: '0.5px',
+                            textTransform: 'uppercase'
+                          }}
+                        >
+                          {navLabels[id]}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            <div style={{ paddingLeft: '1rem' }}>
+              <button
+                className={`portfolio-menu-ai-btn ${isGenUiActive ? 'active' : ''}`}
+                onClick={() => {
+                  if (isGenUiActive) {
+                    const bar = document.getElementById('home');
+                    if (bar) bar.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    enterGenUI();
+                  }
+                }}
+              >
+                <Sparkles size={14} />
+                <span>AI Guide</span>
+              </button>
+            </div>
+          </div>
 
           {/* Mobile hamburger */}
           <button
@@ -246,8 +297,11 @@ export default function PortfolioPage() {
               <a
                 key={id}
                 href={`#${id}`}
-                onClick={(e) => { e.preventDefault(); scrollToSection(id); }}
-                className={`portfolio-mobile-link ${activeSection === id ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection(id);
+                }}
+                className={`portfolio-mobile-link ${activeSection === id && !isGenUiActive ? 'active' : ''}`}
               >
                 {navLabels[id]}
               </a>
@@ -256,44 +310,184 @@ export default function PortfolioPage() {
         )}
       </nav>
 
-      {/* Main Single Page Scrolling Content */}
+      {/* Main Content Area */}
       <div className="portfolio-container">
-        <section id="home" className="portfolio-section">
-          <div className="portfolio-section-inner">
-            {homepageData !== null ? <PortfolioHome data={homepageData} /> : <HomeSkeleton />}
+        {isGenUiActive ? (
+          /* ── GenUI Active View Mode ── */
+          <div className="portfolio-genui-wrapper">
+            <AiGuideCanvas portfolioData={portfolioData} />
           </div>
-        </section>
+        ) : (
+          /* ── Normal Static Portfolio View ── */
+          <>
+            {/* Hero / About Section */}
+            <section id="home" className="portfolio-section">
+              <div className="portfolio-section-inner">
+                {homepageData !== null ? <PortfolioHome data={homepageData} /> : <HomeSkeleton />}
 
-        <section id="experience" className="portfolio-section">
-          <div className="portfolio-section-inner">
-            {experiences !== null ? <PortfolioExperience experiences={experiences} /> : <SectionSkeleton rows={2} />}
-          </div>
-        </section>
+                {/* Interactive AI Guide Command Bar */}
+                <div id="ai-guide-bar-anchor" style={{ marginTop: '2.5rem' }}>
+                  <AiGuideBar />
+                </div>
+              </div>
+            </section>
 
-        <section id="education" className="portfolio-section">
-          <div className="portfolio-section-inner">
-            {education !== null ? <PortfolioEducation education={education} /> : <SectionSkeleton rows={2} />}
-          </div>
-        </section>
+            {/* Work Experience */}
+            <section id="experience" className="portfolio-section">
+              <div className="portfolio-section-inner">
+                {experiences !== null ? <PortfolioExperience experiences={experiences} /> : <SectionSkeleton rows={2} />}
+              </div>
+            </section>
 
-        <section id="projects" className="portfolio-section">
-          <div className="portfolio-section-inner">
-            {projects !== null ? <PortfolioProjects projects={projects} /> : <SectionSkeleton rows={2} />}
-          </div>
-        </section>
+            {/* Education */}
+            <section id="education" className="portfolio-section">
+              <div className="portfolio-section-inner">
+                {education !== null ? <PortfolioEducation education={education} /> : <SectionSkeleton rows={2} />}
+              </div>
+            </section>
 
-        <section id="skills" className="portfolio-section">
-          <div className="portfolio-section-inner">
-            {skills !== null ? <PortfolioSkills skills={skills} /> : <SectionSkeleton rows={1} />}
-          </div>
-        </section>
+            {/* Projects */}
+            <section id="projects" className="portfolio-section">
+              <div className="portfolio-section-inner">
+                {projects !== null ? <PortfolioProjects projects={projects} /> : <SectionSkeleton rows={2} />}
+              </div>
+            </section>
 
-        <section id="certificates" className="portfolio-section">
-          <div className="portfolio-section-inner">
-            {certificates !== null ? <PortfolioCertificates certificates={certificates} /> : <SectionSkeleton rows={2} />}
-          </div>
-        </section>
+            {/* Skills */}
+            <section id="skills" className="portfolio-section">
+              <div className="portfolio-section-inner">
+                {skills !== null ? <PortfolioSkills skills={skills} /> : <SectionSkeleton rows={1} />}
+              </div>
+            </section>
+
+            {/* Certificates */}
+            <section id="certificates" className="portfolio-section">
+              <div className="portfolio-section-inner">
+                {certificates !== null ? <PortfolioCertificates certificates={certificates} /> : <SectionSkeleton rows={2} />}
+              </div>
+            </section>
+          </>
+        )}
       </div>
+
+      {/* Floating minimized trigger badge */}
+      <AiFloatingTrigger />
     </div>
+  );
+}
+
+// ─── Main Component with State & Provider ─────────────────────────────────────
+export default function PortfolioPage() {
+  // Individual loading states
+  const [homepageData, setHomepageData] = useState(null);
+  const [experiences, setExperiences] = useState(null);
+  const [education, setEducation] = useState(null);
+  const [projects, setProjects] = useState(null);
+  const [skills, setSkills] = useState(null);
+  const [certificates, setCertificates] = useState(null);
+
+  const [fetchError, setFetchError] = useState(false);
+  const hasFetchedRef = useRef(false);
+
+  // ── Data fetching with stale-while-revalidate ─────────────────────────────
+  useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+
+    const applyData = (data) => {
+      setHomepageData(data.homepage ?? null);
+      setExperiences(data.experiences ?? []);
+      setEducation(data.education ?? []);
+      setProjects(data.projects ?? []);
+      setSkills(data.skills ?? []);
+      setCertificates(data.certificates ?? []);
+    };
+
+    // 1️⃣ Immediately render from cache
+    const cached = readCache();
+    if (cached) applyData(cached);
+
+    // 2️⃣ Always fetch fresh data in background
+    fetch(`${API_BASE_URL}/portfolio`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((res) => {
+        if (res.success && res.data) {
+          applyData(res.data);
+          writeCache(res.data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load portfolio data:', err);
+        if (!cached) setFetchError(true);
+      });
+  }, []);
+
+  if (fetchError) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          backgroundColor: '#f4f4f7',
+          color: '#1e293b',
+          fontFamily: 'sans-serif',
+          gap: '1rem',
+          padding: '2rem',
+        }}
+      >
+        <div style={{ fontSize: '3rem' }}>⚠️</div>
+        <h2 style={{ fontWeight: 700, fontSize: '1.5rem', margin: 0 }}>Could not load portfolio</h2>
+        <p style={{ color: '#64748b', textAlign: 'center', maxWidth: '400px' }}>
+          The backend server appears to be offline or unreachable. Please try again in a moment.
+        </p>
+        <button
+          onClick={() => {
+            setFetchError(false);
+            hasFetchedRef.current = false;
+          }}
+          style={{
+            padding: '0.7rem 1.5rem',
+            background: '#0284c7',
+            color: 'white',
+            border: 'none',
+            borderRadius: '10px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const portfolioData = {
+    homepage: homepageData,
+    experiences: experiences || [],
+    education: education || [],
+    projects: projects || [],
+    skills: skills || [],
+    certificates: certificates || [],
+  };
+
+  return (
+    <AiGuideProvider portfolioData={portfolioData}>
+      <PortfolioInnerView
+        homepageData={homepageData}
+        experiences={experiences}
+        education={education}
+        projects={projects}
+        skills={skills}
+        certificates={certificates}
+        portfolioData={portfolioData}
+      />
+    </AiGuideProvider>
   );
 }

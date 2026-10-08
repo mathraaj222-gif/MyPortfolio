@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { GraduationCap, Plus, Edit2, Trash2, Save } from 'lucide-react';
 import { getEducation, createEducation, updateEducation, deleteEducation } from '../../../services/coreApi';
+import AdminDocumentUploader from '../../../components/AdminDocumentUploader';
+import AdminDocumentList from '../../../components/AdminDocumentList';
+import { uploadEntityDocument } from '../../../services/aiApi';
 
 const monthsList = [
   { value: "01", label: "January" },
@@ -36,6 +39,8 @@ export default function AdminEducation() {
   const [endYear, setEndYear] = useState("");
   const [cgpa, setCgpa] = useState("");
   const [currentlyStudying, setCurrentlyStudying] = useState(false);
+  const [attachedDoc, setAttachedDoc] = useState(null);
+  const [docRefreshKey, setDocRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchEducation();
@@ -64,6 +69,7 @@ export default function AdminEducation() {
     setEndYear("");
     setCgpa("");
     setCurrentlyStudying(false);
+    setAttachedDoc(null);
     setShowForm(true);
   };
 
@@ -94,6 +100,7 @@ export default function AdminEducation() {
 
     setCgpa(edu.cgpa !== null && edu.cgpa !== undefined ? edu.cgpa.toFixed(2) : "");
     setCurrentlyStudying(edu.currently_studying || false);
+    setAttachedDoc(null);
     setShowForm(true);
   };
 
@@ -151,6 +158,11 @@ export default function AdminEducation() {
         : await createEducation(payload);
 
       if (result.success) {
+        const eduId = editingId || result.data?.id || '';
+        if (attachedDoc && eduId) {
+          await uploadEntityDocument(attachedDoc, 'education', eduId, `${courseName} - ${universityName}`);
+          setDocRefreshKey(k => k + 1);
+        }
         setShowForm(false);
         fetchEducation();
         if (isDraft) {
@@ -330,6 +342,22 @@ export default function AdminEducation() {
               />
             </div>
           </div>
+
+          {/* Optional Supporting Technical Document for AI Guide */}
+          <AdminDocumentUploader
+            file={attachedDoc}
+            onFileChange={setAttachedDoc}
+            label="Supporting Document for AI Guide"
+            helperText="Optional: Upload an academic syllabus, transcript summary, or thesis paper to provide deep educational context for your AI Guide."
+          />
+
+          {editingId && (
+            <AdminDocumentList
+              entityType="education"
+              entityId={String(editingId)}
+              refreshKey={docRefreshKey}
+            />
+          )}
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', borderTop: '1px solid var(--border-glass)', paddingTop: '1.5rem' }}>
             <button type="submit" className="btn-primary">

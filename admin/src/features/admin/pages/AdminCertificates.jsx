@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Award, Plus, Edit2, Trash2, Save } from 'lucide-react';
 import { getCertificates, createCertificate, updateCertificate, deleteCertificate } from '../../../services/coreApi';
+import AdminDocumentUploader from '../../../components/AdminDocumentUploader';
+import AdminDocumentList from '../../../components/AdminDocumentList';
+import { uploadEntityDocument } from '../../../services/aiApi';
 
 const monthsList = [
   { value: "01", label: "January" },
@@ -32,6 +35,8 @@ export default function AdminCertificates() {
   const [receivedMonth, setReceivedMonth] = useState("");
   const [receivedYear, setReceivedYear] = useState("");
   const [credentialId, setCredentialId] = useState("");
+  const [attachedDoc, setAttachedDoc] = useState(null);
+  const [docRefreshKey, setDocRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchCertificates();
@@ -56,6 +61,7 @@ export default function AdminCertificates() {
     setReceivedMonth("");
     setReceivedYear("");
     setCredentialId("");
+    setAttachedDoc(null);
     setShowForm(true);
   };
 
@@ -75,6 +81,7 @@ export default function AdminCertificates() {
     }
     
     setCredentialId(cert.credential_id || "");
+    setAttachedDoc(null);
     setShowForm(true);
   };
 
@@ -127,6 +134,11 @@ export default function AdminCertificates() {
         : await createCertificate(payload);
 
       if (result.success) {
+        const certId = editingId || result.data?.id || '';
+        if (attachedDoc && certId) {
+          await uploadEntityDocument(attachedDoc, 'certificate', certId, name);
+          setDocRefreshKey(k => k + 1);
+        }
         setShowForm(false);
         fetchCertificates();
         if (isDraft) {
@@ -240,6 +252,22 @@ export default function AdminCertificates() {
               placeholder="https://example.com/certificate.png"
             />
           </div>
+
+          {/* Optional Supporting Document for AI Guide */}
+          <AdminDocumentUploader
+            file={attachedDoc}
+            onFileChange={setAttachedDoc}
+            label="Supporting Certificate / Credential Document for AI Guide"
+            helperText="Optional: Upload an accredited certificate PDF, syllabus, or verification transcript to provide deep credential context for your AI Guide."
+          />
+
+          {editingId && (
+            <AdminDocumentList
+              entityType="certificate"
+              entityId={String(editingId)}
+              refreshKey={docRefreshKey}
+            />
+          )}
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', borderTop: '1px solid var(--border-glass)', paddingTop: '1.5rem' }}>
             <button type="submit" className="btn-primary">

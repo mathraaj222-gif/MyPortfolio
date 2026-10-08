@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Briefcase, Plus, Edit2, Trash2, Save } from 'lucide-react';
 import { getExperiences, createExperience, updateExperience, deleteExperience } from '../../../services/coreApi';
+import AdminDocumentUploader from '../../../components/AdminDocumentUploader';
+import AdminDocumentList from '../../../components/AdminDocumentList';
+import { uploadEntityDocument } from '../../../services/aiApi';
 
 const monthsList = [
   { value: "01", label: "January" },
@@ -37,6 +40,8 @@ export default function AdminExperience() {
   const [techStacks, setTechStacks] = useState([]);
   const [newTech, setNewTech] = useState("");
   const [projectDescriptions, setProjectDescriptions] = useState([""]);
+  const [attachedDoc, setAttachedDoc] = useState(null);
+  const [docRefreshKey, setDocRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchExperiences();
@@ -66,6 +71,7 @@ export default function AdminExperience() {
     setTechStacks([]);
     setNewTech("");
     setProjectDescriptions([""]);
+    setAttachedDoc(null);
     setShowForm(true);
   };
 
@@ -97,6 +103,7 @@ export default function AdminExperience() {
     setTechStacks(exp.technical_stacks || []);
     setNewTech("");
     setProjectDescriptions(exp.project_description && exp.project_description.length > 0 ? exp.project_description : [""]);
+    setAttachedDoc(null);
     setShowForm(true);
   };
 
@@ -185,6 +192,11 @@ export default function AdminExperience() {
         : await createExperience(payload);
 
       if (result.success) {
+        const expId = editingId || result.data?.id || '';
+        if (attachedDoc && expId) {
+          await uploadEntityDocument(attachedDoc, 'experience', expId, `${jobRole} at ${companyName}`);
+          setDocRefreshKey(k => k + 1);
+        }
         setShowForm(false);
         fetchExperiences();
         if (isDraft) {
@@ -403,6 +415,22 @@ export default function AdminExperience() {
               {projectDescriptions.length === 0 && <span style={{ fontSize: '0.85rem', color: 'var(--text-dark)' }}>No projects listed. Click add to list one.</span>}
             </div>
           </div>
+
+          {/* Optional Supporting Technical Document for AI Guide */}
+          <AdminDocumentUploader
+            file={attachedDoc}
+            onFileChange={setAttachedDoc}
+            label="Supporting Document for AI Guide"
+            helperText="Optional: Upload a role case study, technical deliverable summary, or architecture notes to give the AI Guide deep commercial context."
+          />
+
+          {editingId && (
+            <AdminDocumentList
+              entityType="experience"
+              entityId={String(editingId)}
+              refreshKey={docRefreshKey}
+            />
+          )}
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', borderTop: '1px solid var(--border-glass)', paddingTop: '1.5rem' }}>
             <button type="submit" className="btn-primary">

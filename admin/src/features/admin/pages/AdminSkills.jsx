@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Code, Plus, Trash2, Search } from 'lucide-react';
 import { getSkills, createSkill, deleteSkill } from '../../../services/coreApi';
+import AdminDocumentUploader from '../../../components/AdminDocumentUploader';
+import AdminDocumentList from '../../../components/AdminDocumentList';
+import { uploadEntityDocument } from '../../../services/aiApi';
 
 const suggestedSkills = [
   { name: "React", iconSlug: "react" },
@@ -49,6 +52,9 @@ export default function AdminSkills() {
   const [customName, setCustomName] = useState("");
   const [customUrl, setCustomUrl] = useState("");
   const [showCustomInputs, setShowCustomInputs] = useState(false);
+  const [attachedDoc, setAttachedDoc] = useState(null);
+  const [docRefreshKey, setDocRefreshKey] = useState(0);
+  const [lastSavedSkillId, setLastSavedSkillId] = useState(null);
 
   useEffect(() => {
     fetchSkills();
@@ -94,6 +100,13 @@ export default function AdminSkills() {
         skill_image_url: imageUrl
       });
       if (result.success) {
+        const skillId = result.data?.id || '';
+        if (attachedDoc && skillId) {
+          await uploadEntityDocument(attachedDoc, 'skills', skillId, name);
+          setLastSavedSkillId(skillId);
+          setDocRefreshKey(k => k + 1);
+          setAttachedDoc(null);
+        }
         fetchSkills();
         setSearchQuery("");
       } else {
@@ -231,6 +244,20 @@ export default function AdminSkills() {
                     placeholder="https://example.com/logo.svg"
                   />
                 </div>
+                {/* Optional Supporting Document for AI Guide */}
+                <AdminDocumentUploader
+                  file={attachedDoc}
+                  onFileChange={setAttachedDoc}
+                  label="Supporting Skill Document for AI Guide"
+                  helperText="Optional: Attach technical notes, certification syllabus, or project summaries demonstrating this skill."
+                />
+                {lastSavedSkillId && (
+                  <AdminDocumentList
+                    entityType="skills"
+                    entityId={String(lastSavedSkillId)}
+                    refreshKey={docRefreshKey}
+                  />
+                )}
                 <button type="submit" className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', alignSelf: 'flex-start' }}>
                   <Plus size={14} />
                   <span>Register Skill</span>
