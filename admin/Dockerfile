@@ -6,13 +6,15 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Accept the API URL and Admin JWT Token as build arguments
+# Accept API URLs and Admin JWT Token as build arguments
 ARG VITE_API_URL
 ARG VITE_ADMIN_TOKEN
+ARG VITE_AI_API_URL
 
 # Inject them as environment variables for the Vite build process
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_ADMIN_TOKEN=$VITE_ADMIN_TOKEN
+ENV VITE_AI_API_URL=$VITE_AI_API_URL
 
 # Copy source code and build the Vite React admin app
 COPY . .

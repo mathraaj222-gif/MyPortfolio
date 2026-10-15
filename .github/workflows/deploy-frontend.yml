@@ -40,6 +40,7 @@ jobs:
           # so the Amplify app (HTTPS) never makes insecure mixed-content HTTP calls.
           # Secret value: https://d9rjg6j3dykkv.cloudfront.net/api/v1
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_AI_API_URL: ${{ secrets.VITE_AI_API_URL }}
         run: npm run build
         # Produces: frontend/dist/
 

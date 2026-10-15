@@ -41,6 +41,7 @@ jobs:
           # Generated with: node -e "jwt.sign({role:'admin'}, ADMIN_SECRET, {expiresIn:'365d'})"
           # Must match the ADMIN_SECRET set in the EB environment.
           VITE_ADMIN_TOKEN: ${{ secrets.VITE_ADMIN_TOKEN }}
+          VITE_AI_API_URL: ${{ secrets.VITE_AI_API_URL }}
         run: npm run build
         # Produces: admin/dist/
 

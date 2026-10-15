@@ -6,10 +6,12 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Accept the API URL as a build argument
+# Accept API URLs as build arguments
 ARG VITE_API_URL
-# Set it as an environment variable for the build process hope it works this time
+ARG VITE_AI_API_URL
+# Set them as environment variables for the Vite build process
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_AI_API_URL=$VITE_AI_API_URL
 
 # Copy source and build the Vite React app
 COPY . .
