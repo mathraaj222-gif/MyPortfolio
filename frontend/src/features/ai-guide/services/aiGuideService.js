@@ -21,14 +21,15 @@ export async function queryAiGuide(query, fallbackData = null) {
       body: JSON.stringify({ query }),
     });
 
-    if (res.ok) {
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && contentType.includes('application/json')) {
       const json = await res.json();
       if (json.success && json.data) {
         queryCache.set(cacheKey, json.data);
         return json.data;
       }
     }
-    throw new Error(`Server returned status ${res.status}`);
+    throw new Error(`Server returned status ${res.status} with non-JSON content-type "${contentType}"`);
   } catch (err) {
     console.warn(`Network call to ${AI_API_URL}/guide failed, running strict client fallback:`, err);
     if (fallbackData) {
