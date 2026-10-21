@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Sparkles, ArrowRight, CornerDownLeft, Loader2 } from 'lucide-react';
+import { Sparkles, ArrowRight, CornerDownLeft } from 'lucide-react';
 import { useAiGuide } from '../context/AiGuideContext';
+import { LotusSpinner } from '../../portfolio/components/LotusLoader';
 
 const DEFAULT_SUGGESTIONS = [
   { label: 'Model Finetuning Experience', query: 'Do you know about Model Finetuning and LLM?' },
@@ -42,7 +43,7 @@ export default function AiGuideBar() {
             className="ai-guide-input"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Ask my AI Guide anything (e.g. 'FinTech experience', 'React & AWS', 'Top projects')..."
+            placeholder="Ask my AI Guide anything (e.g. 'Deep Learning Projects', 'React & AWS', 'Top projects')..."
             disabled={isLoading}
             aria-label="Ask AI Guide"
           />
@@ -54,7 +55,7 @@ export default function AiGuideBar() {
             aria-label="Submit question to AI Guide"
           >
             {isLoading ? (
-              <Loader2 size={16} className="spinning-loader" />
+              <LotusSpinner size={18} className="lotus-btn-spin" />
             ) : (
               <>
                 <span className="submit-label">Ask Guide</span>

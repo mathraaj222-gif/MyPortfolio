@@ -31,7 +31,7 @@ export default function PortfolioEducation({ education }) {
 
               <div className="portfolio-edu-meta">
                 <span>{edu.uni_state}, {edu.uni_country}</span>
-                <span style={{ fontWeight: 600, color: 'var(--pf-gradient-blue)', marginTop: '0.25rem' }}>
+                <span style={{ fontWeight: 600, color: 'var(--pf-accent)', marginTop: '0.25rem' }}>
                   {formatPeriod(edu)}
                 </span>
               </div>

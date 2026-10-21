@@ -5,6 +5,8 @@ import PortfolioEducation from '../components/PortfolioEducation';
 import PortfolioProjects from '../components/PortfolioProjects';
 import PortfolioSkills from '../components/PortfolioSkills';
 import PortfolioCertificates from '../components/PortfolioCertificates';
+import FloatingElementsBackground from '../components/FloatingElementsBackground';
+import LotusLoader from '../components/LotusLoader';
 
 import { AiGuideProvider, useAiGuide } from '../../ai-guide/context/AiGuideContext';
 import AiGuideBar from '../../ai-guide/components/AiGuideBar';
@@ -161,6 +163,9 @@ function PortfolioInnerView({
 
   return (
     <div className="portfolio-root">
+      {/* Background Floating Elements (Books, Equations, Graphs, AI Robots) */}
+      <FloatingElementsBackground />
+
       {/* Background Glows */}
       <div className="portfolio-glow-container">
         <div className="portfolio-glow-blob1"></div>
@@ -215,10 +220,12 @@ function PortfolioInnerView({
                     overflow: 'hidden',
                     position: 'relative',
                     borderRadius: '18px',
-                    backgroundColor: '#f8fafc',
+                    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
                     padding: '0 1.25rem',
-                    border: '1px solid #e2e8f0',
-                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+                    border: '1px solid rgba(255, 255, 255, 0.7)',
+                    boxShadow: '0 4px 14px rgba(43, 45, 51, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
                   }}
                 >
                   <ul
@@ -233,7 +240,8 @@ function PortfolioInnerView({
                     }}
                   >
                     {navLinks.map((id) => (
-                      <li key={id} style={{ height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <li key={id} style={{ height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--pf-accent)', display: 'inline-block' }} />
                         <a
                           href={`#${id}`}
                           onClick={(e) => {
@@ -242,10 +250,10 @@ function PortfolioInnerView({
                           }}
                           style={{
                             textDecoration: 'none',
-                            color: '#0f172a',
+                            color: 'var(--pf-charcoal)',
                             fontWeight: 600,
-                            fontSize: '0.85rem',
-                            letterSpacing: '0.5px',
+                            fontSize: '0.825rem',
+                            letterSpacing: '0.6px',
                             textTransform: 'uppercase'
                           }}
                         >
@@ -387,6 +395,8 @@ export default function PortfolioPage() {
   const [certificates, setCertificates] = useState(null);
 
   const [fetchError, setFetchError] = useState(false);
+  // true only when there is no cache — shows the full-page lotus loader
+  const [isInitialLoading, setIsInitialLoading] = useState(!readCache());
   const hasFetchedRef = useRef(false);
 
   // ── Data fetching with stale-while-revalidate ─────────────────────────────
@@ -401,6 +411,7 @@ export default function PortfolioPage() {
       setProjects(data.projects ?? []);
       setSkills(data.skills ?? []);
       setCertificates(data.certificates ?? []);
+      setIsInitialLoading(false); // dismiss loader once data is ready
     };
 
     // 1️⃣ Immediately render from cache
@@ -478,7 +489,11 @@ export default function PortfolioPage() {
   };
 
   return (
-    <AiGuideProvider portfolioData={portfolioData}>
+    <>
+      {/* Full-screen lotus spinner — only shown on cold load (no cache) */}
+      <LotusLoader isLoading={isInitialLoading} />
+
+      <AiGuideProvider portfolioData={portfolioData}>
       <PortfolioInnerView
         homepageData={homepageData}
         experiences={experiences}
@@ -489,5 +504,6 @@ export default function PortfolioPage() {
         portfolioData={portfolioData}
       />
     </AiGuideProvider>
+    </>
   );
 }

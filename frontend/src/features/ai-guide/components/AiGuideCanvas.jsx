@@ -1,4 +1,5 @@
-import { ArrowLeft, History, Minimize2, Sparkles, HelpCircle, RefreshCw, ExternalLink, ArrowRightLeft } from 'lucide-react';
+import { History, Minimize2, Sparkles, HelpCircle, RefreshCw, ExternalLink } from 'lucide-react';
+import { LotusSpinner } from '../../portfolio/components/LotusLoader';
 import { useAiGuide } from '../context/AiGuideContext';
 import EditorialGrid from './EditorialGrid';
 import AiChatHistoryDrawer from './AiChatHistoryDrawer';
@@ -65,13 +66,11 @@ export default function AiGuideCanvas() {
         {isLoading ? (
           <div className="editorial-loading-canvas">
             <div className="editorial-loading-content">
-              <ArrowRightLeft size={36} className="spinning-sparkle" />
-              <h3>Thinking...</h3>
-              <p>Retrieving your query...</p>
-              <div className="editorial-skeleton-grid">
-                <div className="skeleton-editorial-card"></div>
-                <div className="skeleton-editorial-card"></div>
-              </div>
+              {/* Lotus spinner replaces the old ArrowRightLeft icon */}
+              <LotusSpinner size={80} className="lotus-loader-spin" />
+              <div className="lotus-canvas-ring" />
+              <h3 className="editorial-thinking-label">Thinking...</h3>
+              <p className="editorial-thinking-sub">Retrieving your query...</p>
             </div>
           </div>
         ) : (
