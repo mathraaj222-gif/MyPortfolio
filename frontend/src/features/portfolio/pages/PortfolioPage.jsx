@@ -7,6 +7,7 @@ import PortfolioSkills from '../components/PortfolioSkills';
 import PortfolioCertificates from '../components/PortfolioCertificates';
 import FloatingElementsBackground from '../components/FloatingElementsBackground';
 import LotusLoader from '../components/LotusLoader';
+import PortfolioFooter from '../components/PortfolioFooter';
 
 import { AiGuideProvider, useAiGuide } from '../../ai-guide/context/AiGuideContext';
 import AiGuideBar from '../../ai-guide/components/AiGuideBar';
@@ -374,6 +375,9 @@ function PortfolioInnerView({
                 {certificates !== null ? <PortfolioCertificates certificates={certificates} /> : <SectionSkeleton rows={2} />}
               </div>
             </section>
+
+            {/* Footer matching reference design */}
+            <PortfolioFooter data={homepageData} />
           </>
         )}
       </div>
